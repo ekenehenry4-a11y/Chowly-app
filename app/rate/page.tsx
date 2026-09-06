@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
-export default function RatePage() {
+function RateForm() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get('order_id')
   const customerId = searchParams.get('customer_id')
@@ -102,5 +102,13 @@ export default function RatePage() {
         {submitting ? 'Submitting...' : 'Submit Rating'}
       </button>
     </div>
+  )
+}
+
+export default function RatePage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '2rem' }}>Loading...</div>}>
+      <RateForm />
+    </Suspense>
   )
 }
