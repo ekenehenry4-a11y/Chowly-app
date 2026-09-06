@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import Link from 'next/link'
 
 type MenuItem = {
   menu_item_id: string
@@ -19,10 +20,17 @@ export default function OrderPage() {
   const [submitting, setSubmitting] = useState(false)
   const [confirmation, setConfirmation] = useState<null | {
     orderId: string
+    customerId: string
     waitTime: number
     items: { name: string; quantity: number }[]
+    totalAmount: number // <-- ADDED
   }>(null)
   const [error, setError] = useState('')
+
+  // ADDED: payment state
+  const [paying, setPaying] = useState(false)
+  const [paid, setPaid] = useState(false)
+  const [paymentError, setPaymentError] = useState('')
 
   useEffect(() => {
     async function loadMenu() {
@@ -55,7 +63,6 @@ export default function OrderPage() {
 
     setSubmitting(true)
 
-    // 1. Create customer
     const { data: customerData, error: customerError } = await supabase
       .from('customer')
       .insert({ name: customerName, phone_number: customerPhone })
@@ -68,7 +75,6 @@ export default function OrderPage() {
       return
     }
 
-    // 2. Create order
     const { data: orderData, error: orderError } = await supabase
       .from('order')
       .insert({ customer_id: customerData.customer_id, status: 'Pending' })
@@ -81,9 +87,9 @@ export default function OrderPage() {
       return
     }
 
-    // 3. Create order_item rows
     const now = new Date()
     let maxPrepTime = 0
+    let totalAmount = 0 // <-- ADDED
     const itemsForConfirmation: { name: string; quantity: number }[] = []
 
     for (const [menuItemId, quantity] of selectedItems) {
@@ -91,6 +97,7 @@ export default function OrderPage() {
       if (!menuItem) continue
 
       maxPrepTime = Math.max(maxPrepTime, menuItem.prep_time_minutes)
+      totalAmount += menuItem.price * quantity // <-- ADDED
       itemsForConfirmation.push({ name: menuItem.name, quantity })
 
       const prepEnd = new Date(now.getTime() + menuItem.prep_time_minutes * 60000)
@@ -106,10 +113,35 @@ export default function OrderPage() {
 
     setConfirmation({
       orderId: orderData.order_id,
+      customerId: customerData.customer_id,
       waitTime: maxPrepTime,
       items: itemsForConfirmation,
+      totalAmount, // <-- ADDED
     })
     setSubmitting(false)
+  }
+
+  // ADDED: pay function
+  async function payNow() {
+    if (!confirmation) return
+    setPaymentError('')
+    setPaying(true)
+
+    const { error: paymentInsertError } = await supabase.from('payment').insert({
+      order_id: confirmation.orderId,
+      amount: confirmation.totalAmount,
+      status: 'Paid',
+      paid_at: new Date().toISOString(),
+    })
+
+    if (paymentInsertError) {
+      setPaymentError('Could not process payment: ' + paymentInsertError.message)
+      setPaying(false)
+      return
+    }
+
+    setPaid(true)
+    setPaying(false)
   }
 
   if (confirmation) {
@@ -126,6 +158,26 @@ export default function OrderPage() {
             </li>
           ))}
         </ul>
+        <p style={{ fontWeight: 'bold' }}>Total: ₦{confirmation.totalAmount}</p>
+
+        {/* ADDED: payment section */}
+        {paid ? (
+          <p style={{ color: 'green', fontWeight: 'bold' }}>Payment received. Thank you!</p>
+        ) : (
+          <div style={{ marginBottom: '1rem' }}>
+            <button onClick={payNow} disabled={paying} style={{ padding: '0.5rem 1rem', marginRight: '1rem' }}>
+              {paying ? 'Processing...' : `Pay ₦${confirmation.totalAmount} Now`}
+            </button>
+            {paymentError && <p style={{ color: 'red' }}>{paymentError}</p>}
+          </div>
+        )}
+
+        <Link
+          href={`/rate?order_id=${confirmation.orderId}&customer_id=${confirmation.customerId}`}
+          style={{ display: 'inline-block', marginTop: '1rem', padding: '0.5rem 1rem', border: '1px solid #333' }}
+        >
+          Rate your order
+        </Link>
       </div>
     )
   }
