@@ -7,31 +7,48 @@ export default async function Home() {
     .select('*')
 
   if (error) {
-    return <div>Error loading menu: {error.message}</div>
+    return <div className="p-8 text-red-600">Error loading menu: {error.message}</div>
   }
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <nav style={{ marginBottom: '1.5rem' }}>
-        <Link href="/order" style={{ marginRight: '1rem', padding: '0.5rem 1rem', border: '1px solid #333' }}>
+    <div className="max-w-2xl mx-auto p-8">
+      <nav className="flex gap-4 mb-8">
+        <Link
+          href="/order"
+          className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors font-medium"
+        >
           I&apos;m a Customer
         </Link>
-        <Link href="/waiter" style={{ padding: '0.5rem 1rem', border: '1px solid #333' }}>
+        <Link
+          href="/waiter"
+          className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors font-medium"
+        >
           I&apos;m a Waiter
         </Link>
       </nav>
 
-      <h1>Chowly Menu</h1>
+      <h1 className="text-3xl font-bold mb-6">Chowly Menu</h1>
+
       {menuItems && menuItems.length > 0 ? (
-        <ul>
+        <ul className="space-y-3">
           {menuItems.map((item) => (
-            <li key={item.menu_item_id}>
-              {item.name} ({item.item_type}) — ₦{item.price} — {item.prep_time_minutes} min
+            <li
+              key={item.menu_item_id}
+              className="flex justify-between items-center border-b border-gray-200 pb-3"
+            >
+              <div>
+                <span className="font-medium">{item.name}</span>
+                <span className="text-gray-500 text-sm ml-2">({item.item_type})</span>
+              </div>
+              <div className="text-right">
+                <div className="font-semibold">₦{item.price}</div>
+                <div className="text-gray-500 text-sm">{item.prep_time_minutes} min</div>
+              </div>
             </li>
           ))}
         </ul>
       ) : (
-        <p>No menu items found yet.</p>
+        <p className="text-gray-500">No menu items found yet.</p>
       )}
     </div>
   )

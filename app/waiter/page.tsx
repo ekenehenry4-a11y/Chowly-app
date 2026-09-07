@@ -102,50 +102,72 @@ export default function WaiterPage() {
   }
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>Waiter — Pending Orders</h1>
-      {message && <p style={{ color: 'blue' }}>{message}</p>}
+    <div className="max-w-2xl mx-auto p-8">
+      <h1 className="text-3xl font-bold mb-6">Waiter — Pending Orders</h1>
+      {message && <p className="text-blue-700 mb-4">{message}</p>}
 
-      {orders.length === 0 && <p>No pending orders right now.</p>}
+      {orders.length === 0 && <p className="text-gray-500">No pending orders right now.</p>}
 
       {orders.map((order) => (
-        <div key={order.order_id} style={{ border: '1px solid #ccc', padding: '1rem', marginBottom: '1rem' }}>
-          <p><strong>Order ID:</strong> {order.order_id}</p>
-          <p><strong>Customer:</strong> {order.customer?.name} ({order.customer?.phone_number})</p>
-          <p><strong>Placed:</strong> {new Date(order.created_at).toLocaleString()}</p>
-          <ul>
+        <div
+          key={order.order_id}
+          className="border border-gray-200 rounded-lg p-5 mb-4 shadow-sm"
+        >
+          <p className="text-sm text-gray-500 mb-1">
+            <span className="font-medium text-gray-700">Order ID:</span>{' '}
+            <span className="font-mono">{order.order_id}</span>
+          </p>
+          <p className="mb-1">
+            <span className="font-medium">Customer:</span> {order.customer?.name} ({order.customer?.phone_number})
+          </p>
+          <p className="text-sm text-gray-500 mb-3">
+            <span className="font-medium text-gray-700">Placed:</span>{' '}
+            {new Date(order.created_at).toLocaleString()}
+          </p>
+
+          <ul className="mb-4 space-y-1">
             {order.order_item.map((item) => (
-              <li key={item.order_item_id}>
-                {item.quantity}x {item.menu_item?.name} ({item.menu_item?.item_type})
+              <li key={item.order_item_id} className="text-gray-700">
+                {item.quantity}x {item.menu_item?.name}{' '}
+                <span className="text-gray-400 text-sm">({item.menu_item?.item_type})</span>
               </li>
             ))}
           </ul>
 
-          <div style={{ marginTop: '0.5rem' }}>
-            <label>Chef: </label>
-            <select
-              value={selectedChef[order.order_id] || ''}
-              onChange={(e) => setSelectedChef((prev) => ({ ...prev, [order.order_id]: e.target.value }))}
-            >
-              <option value="">-- select chef --</option>
-              {chefs.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+          <div className="flex flex-wrap gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Chef</label>
+              <select
+                value={selectedChef[order.order_id] || ''}
+                onChange={(e) => setSelectedChef((prev) => ({ ...prev, [order.order_id]: e.target.value }))}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
+              >
+                <option value="">-- select chef --</option>
+                {chefs.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
 
-            <label style={{ marginLeft: '1rem' }}>Bartender: </label>
-            <select
-              value={selectedBartender[order.order_id] || ''}
-              onChange={(e) => setSelectedBartender((prev) => ({ ...prev, [order.order_id]: e.target.value }))}
-            >
-              <option value="">-- select bartender --</option>
-              {bartenders.map((b) => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
+            <div>
+              <label className="block text-sm font-medium mb-1">Bartender</label>
+              <select
+                value={selectedBartender[order.order_id] || ''}
+                onChange={(e) => setSelectedBartender((prev) => ({ ...prev, [order.order_id]: e.target.value }))}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
+              >
+                <option value="">-- select bartender --</option>
+                {bartenders.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <button onClick={() => assignAndServe(order)} style={{ marginTop: '0.75rem', padding: '0.5rem 1rem' }}>
+          <button
+            onClick={() => assignAndServe(order)}
+            className="px-5 py-2.5 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+          >
             Assign & Mark Served
           </button>
         </div>

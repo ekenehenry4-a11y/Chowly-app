@@ -23,11 +23,10 @@ export default function OrderPage() {
     customerId: string
     waitTime: number
     items: { name: string; quantity: number }[]
-    totalAmount: number // <-- ADDED
+    totalAmount: number
   }>(null)
   const [error, setError] = useState('')
 
-  // ADDED: payment state
   const [paying, setPaying] = useState(false)
   const [paid, setPaid] = useState(false)
   const [paymentError, setPaymentError] = useState('')
@@ -89,7 +88,7 @@ export default function OrderPage() {
 
     const now = new Date()
     let maxPrepTime = 0
-    let totalAmount = 0 // <-- ADDED
+    let totalAmount = 0
     const itemsForConfirmation: { name: string; quantity: number }[] = []
 
     for (const [menuItemId, quantity] of selectedItems) {
@@ -97,7 +96,7 @@ export default function OrderPage() {
       if (!menuItem) continue
 
       maxPrepTime = Math.max(maxPrepTime, menuItem.prep_time_minutes)
-      totalAmount += menuItem.price * quantity // <-- ADDED
+      totalAmount += menuItem.price * quantity
       itemsForConfirmation.push({ name: menuItem.name, quantity })
 
       const prepEnd = new Date(now.getTime() + menuItem.prep_time_minutes * 60000)
@@ -116,12 +115,11 @@ export default function OrderPage() {
       customerId: customerData.customer_id,
       waitTime: maxPrepTime,
       items: itemsForConfirmation,
-      totalAmount, // <-- ADDED
+      totalAmount,
     })
     setSubmitting(false)
   }
 
-  // ADDED: pay function
   async function payNow() {
     if (!confirmation) return
     setPaymentError('')
@@ -146,35 +144,46 @@ export default function OrderPage() {
 
   if (confirmation) {
     return (
-      <div style={{ padding: '2rem' }}>
-        <h1>Order placed!</h1>
-        <p>Order ID: {confirmation.orderId}</p>
-        <p>Estimated waiting time: {confirmation.waitTime} minutes</p>
-        <h3>Your items:</h3>
-        <ul>
+      <div className="max-w-xl mx-auto p-8">
+        <h1 className="text-3xl font-bold mb-4 text-green-700">Order placed!</h1>
+        <p className="text-gray-600 mb-1">
+          Order ID: <span className="font-mono text-sm">{confirmation.orderId}</span>
+        </p>
+        <p className="text-gray-600 mb-6">
+          Estimated waiting time: <span className="font-semibold">{confirmation.waitTime} minutes</span>
+        </p>
+
+        <h3 className="text-lg font-semibold mb-2">Your items</h3>
+        <ul className="mb-4 space-y-1">
           {confirmation.items.map((item, i) => (
-            <li key={i}>
+            <li key={i} className="text-gray-700">
               {item.quantity}x {item.name}
             </li>
           ))}
         </ul>
-        <p style={{ fontWeight: 'bold' }}>Total: ₦{confirmation.totalAmount}</p>
 
-        {/* ADDED: payment section */}
+        <p className="text-xl font-bold mb-6 border-t border-gray-200 pt-4">
+          Total: ₦{confirmation.totalAmount}
+        </p>
+
         {paid ? (
-          <p style={{ color: 'green', fontWeight: 'bold' }}>Payment received. Thank you!</p>
+          <p className="text-green-700 font-semibold mb-6">Payment received. Thank you!</p>
         ) : (
-          <div style={{ marginBottom: '1rem' }}>
-            <button onClick={payNow} disabled={paying} style={{ padding: '0.5rem 1rem', marginRight: '1rem' }}>
+          <div className="mb-6">
+            <button
+              onClick={payNow}
+              disabled={paying}
+              className="px-5 py-2.5 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors disabled:opacity-50 mr-3"
+            >
               {paying ? 'Processing...' : `Pay ₦${confirmation.totalAmount} Now`}
             </button>
-            {paymentError && <p style={{ color: 'red' }}>{paymentError}</p>}
+            {paymentError && <p className="text-red-600 mt-2">{paymentError}</p>}
           </div>
         )}
 
         <Link
           href={`/rate?order_id=${confirmation.orderId}&customer_id=${confirmation.customerId}`}
-          style={{ display: 'inline-block', marginTop: '1rem', padding: '0.5rem 1rem', border: '1px solid #333' }}
+          className="inline-block px-5 py-2.5 rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors font-medium"
         >
           Rate your order
         </Link>
@@ -183,41 +192,64 @@ export default function OrderPage() {
   }
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>Place Your Order</h1>
+    <div className="max-w-xl mx-auto p-8">
+      <h1 className="text-3xl font-bold mb-6">Place Your Order</h1>
 
-      <div style={{ marginBottom: '1rem' }}>
+      <div className="flex gap-3 mb-8">
         <input
           placeholder="Your name"
           value={customerName}
           onChange={(e) => setCustomerName(e.target.value)}
-          style={{ marginRight: '0.5rem', padding: '0.5rem' }}
+          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
         />
         <input
           placeholder="Phone number"
           value={customerPhone}
           onChange={(e) => setCustomerPhone(e.target.value)}
-          style={{ padding: '0.5rem' }}
+          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
         />
       </div>
 
-      <h2>Menu</h2>
-      <ul style={{ listStyle: 'none', padding: 0 }}>
+      <h2 className="text-xl font-semibold mb-4">Menu</h2>
+      <ul className="space-y-3 mb-6">
         {menuItems.map((item) => (
-          <li key={item.menu_item_id} style={{ marginBottom: '0.75rem' }}>
-            {item.name} ({item.item_type}) — ₦{item.price} — {item.prep_time_minutes} min
-            <button onClick={() => updateQuantity(item.menu_item_id, -1)} style={{ marginLeft: '1rem' }}>
-              −
-            </button>
-            <span style={{ margin: '0 0.5rem' }}>{cart[item.menu_item_id] || 0}</span>
-            <button onClick={() => updateQuantity(item.menu_item_id, 1)}>+</button>
+          <li
+            key={item.menu_item_id}
+            className="flex justify-between items-center border-b border-gray-200 pb-3"
+          >
+            <div>
+              <span className="font-medium">{item.name}</span>
+              <span className="text-gray-500 text-sm ml-2">({item.item_type})</span>
+              <div className="text-gray-500 text-sm">
+                ₦{item.price} — {item.prep_time_minutes} min
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => updateQuantity(item.menu_item_id, -1)}
+                className="w-8 h-8 rounded-full border border-gray-300 hover:bg-gray-100 flex items-center justify-center"
+              >
+                −
+              </button>
+              <span className="w-6 text-center font-medium">{cart[item.menu_item_id] || 0}</span>
+              <button
+                onClick={() => updateQuantity(item.menu_item_id, 1)}
+                className="w-8 h-8 rounded-full border border-gray-300 hover:bg-gray-100 flex items-center justify-center"
+              >
+                +
+              </button>
+            </div>
           </li>
         ))}
       </ul>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p className="text-red-600 mb-4">{error}</p>}
 
-      <button onClick={submitOrder} disabled={submitting} style={{ padding: '0.75rem 1.5rem', marginTop: '1rem' }}>
+      <button
+        onClick={submitOrder}
+        disabled={submitting}
+        className="w-full px-6 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
+      >
         {submitting ? 'Placing order...' : 'Submit Order'}
       </button>
     </div>
