@@ -54,15 +54,13 @@ export default function LoginPage() {
         `/order?customer_id=${newCustomer.customer_id}&customer_name=${encodeURIComponent(newCustomer.name)}`
       )
     } else {
-      // Waiter login — check name + password match
-      const { data: waiter, error: waiterError } = await supabase
-        .from('waiter')
-        .select('waiter_id, name, password')
-        .ilike('name', name)
-        .eq('password', phoneOrPassword)
-        .maybeSingle()
+      // Waiter login — via secure database function, password never leaves the database
+      const { data: waiterId, error: waiterError } = await supabase.rpc('check_waiter_login', {
+        p_name: name,
+        p_password: phoneOrPassword,
+      })
 
-      if (waiterError || !waiter) {
+      if (waiterError || !waiterId) {
         setError('Invalid waiter name or password.')
         setSubmitting(false)
         return
