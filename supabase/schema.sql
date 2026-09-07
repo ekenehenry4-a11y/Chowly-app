@@ -23,7 +23,8 @@ CREATE TABLE bartender (
 CREATE TABLE waiter (
   waiter_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   restaurant_id uuid REFERENCES restaurant(restaurant_id),
-  name text NOT NULL
+  name text NOT NULL,
+  password text -- plain-text password for lightweight login (not production-grade security)
 );
 
 CREATE TABLE customer (
