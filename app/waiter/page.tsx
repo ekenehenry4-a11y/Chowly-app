@@ -57,6 +57,12 @@ export default function WaiterPage() {
   useEffect(() => {
     loadOrders()
     loadStaff()
+
+    const interval = setInterval(() => {
+      loadOrders()
+    }, 5000) // refresh every 5 seconds
+
+    return () => clearInterval(interval)
   }, [])
 
   async function assignAndServe(order: OrderRow) {

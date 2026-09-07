@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
@@ -12,7 +14,11 @@ type MenuItem = {
   prep_time_minutes: number
 }
 
-export default function OrderPage() {
+function OrderForm() {
+  const searchParams = useSearchParams()
+  const loggedInCustomerId = searchParams.get('customer_id') // <-- ADDED
+  const loggedInCustomerName = searchParams.get('customer_name') // <-- ADDED
+
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [cart, setCart] = useState<{ [key: string]: number }>({})
   const [customerName, setCustomerName] = useState('')
@@ -51,7 +57,8 @@ export default function OrderPage() {
     setError('')
     const selectedItems = Object.entries(cart).filter(([, qty]) => qty > 0)
 
-    if (!customerName || !customerPhone) {
+    // ADDED: skip name/phone validation if already logged in
+    if (!loggedInCustomerId && (!customerName || !customerPhone)) {
       setError('Please enter your name and phone number.')
       return
     }
@@ -62,21 +69,27 @@ export default function OrderPage() {
 
     setSubmitting(true)
 
-    const { data: customerData, error: customerError } = await supabase
-      .from('customer')
-      .insert({ name: customerName, phone_number: customerPhone })
-      .select()
-      .single()
+    let customerId = loggedInCustomerId // <-- ADDED: reuse logged-in id if present
 
-    if (customerError || !customerData) {
-      setError('Could not create customer: ' + customerError?.message)
-      setSubmitting(false)
-      return
+    // ADDED: only create a new customer if not already logged in
+    if (!customerId) {
+      const { data: customerData, error: customerError } = await supabase
+        .from('customer')
+        .insert({ name: customerName, phone_number: customerPhone })
+        .select()
+        .single()
+
+      if (customerError || !customerData) {
+        setError('Could not create customer: ' + customerError?.message)
+        setSubmitting(false)
+        return
+      }
+      customerId = customerData.customer_id
     }
 
     const { data: orderData, error: orderError } = await supabase
       .from('order')
-      .insert({ customer_id: customerData.customer_id, status: 'Pending' })
+      .insert({ customer_id: customerId, status: 'Pending' })
       .select()
       .single()
 
@@ -112,7 +125,7 @@ export default function OrderPage() {
 
     setConfirmation({
       orderId: orderData.order_id,
-      customerId: customerData.customer_id,
+      customerId: customerId as string,
       waitTime: maxPrepTime,
       items: itemsForConfirmation,
       totalAmount,
@@ -195,20 +208,27 @@ export default function OrderPage() {
     <div className="max-w-xl mx-auto p-8">
       <h1 className="text-3xl font-bold mb-6">Place Your Order</h1>
 
-      <div className="flex gap-3 mb-8">
-        <input
-          placeholder="Your name"
-          value={customerName}
-          onChange={(e) => setCustomerName(e.target.value)}
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
-        />
-        <input
-          placeholder="Phone number"
-          value={customerPhone}
-          onChange={(e) => setCustomerPhone(e.target.value)}
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
-        />
-      </div>
+      {/* ADDED: show greeting if logged in, otherwise show name/phone inputs */}
+      {loggedInCustomerId ? (
+        <p className="mb-8 text-gray-600">
+          Ordering as <span className="font-medium">{loggedInCustomerName}</span>
+        </p>
+      ) : (
+        <div className="flex gap-3 mb-8">
+          <input
+            placeholder="Your name"
+            value={customerName}
+            onChange={(e) => setCustomerName(e.target.value)}
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
+          />
+          <input
+            placeholder="Phone number"
+            value={customerPhone}
+            onChange={(e) => setCustomerPhone(e.target.value)}
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
+          />
+        </div>
+      )}
 
       <h2 className="text-xl font-semibold mb-4">Menu</h2>
       <ul className="space-y-3 mb-6">
@@ -253,5 +273,13 @@ export default function OrderPage() {
         {submitting ? 'Placing order...' : 'Submit Order'}
       </button>
     </div>
+  )
+}
+
+export default function OrderPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-gray-500">Loading...</div>}>
+      <OrderForm />
+    </Suspense>
   )
 }
