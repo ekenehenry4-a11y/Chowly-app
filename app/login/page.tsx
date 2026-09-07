@@ -4,30 +4,49 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
+const COUNTRY_CODES = [
+  { code: '+234', country: 'Nigeria' },
+  { code: '+233', country: 'Ghana' },
+  { code: '+225', country: "Côte d'Ivoire" },
+  { code: '+221', country: 'Senegal' },
+  { code: '+229', country: 'Benin' },
+  { code: '+228', country: 'Togo' },
+]
+
 export default function LoginPage() {
   const router = useRouter()
   const [role, setRole] = useState<'customer' | 'waiter'>('customer')
   const [name, setName] = useState('')
-  const [phoneOrPassword, setPhoneOrPassword] = useState('')
+  const [countryCode, setCountryCode] = useState('+234')
+  const [localNumber, setLocalNumber] = useState('')
+  const [waiterPassword, setWaiterPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   async function handleLogin() {
     setError('')
 
-    if (!name || !phoneOrPassword) {
-      setError('Please fill in both fields.')
+    if (!name) {
+      setError('Please enter your name.')
       return
     }
 
-    setSubmitting(true)
-
     if (role === 'customer') {
-      // Look up existing customer by phone number
+      const digitsOnly = localNumber.replace(/\D/g, '')
+
+      if (digitsOnly.length !== 10) {
+        setError('Please enter a valid 10-digit phone number (excluding the country code).')
+        return
+      }
+
+      const fullPhoneNumber = `${countryCode}${digitsOnly}`
+
+      setSubmitting(true)
+
       const { data: existingCustomer } = await supabase
         .from('customer')
         .select('customer_id, name, phone_number')
-        .eq('phone_number', phoneOrPassword)
+        .eq('phone_number', fullPhoneNumber)
         .maybeSingle()
 
       if (existingCustomer) {
@@ -37,10 +56,9 @@ export default function LoginPage() {
         return
       }
 
-      // No existing customer — create one on the spot
       const { data: newCustomer, error: createError } = await supabase
         .from('customer')
-        .insert({ name, phone_number: phoneOrPassword })
+        .insert({ name, phone_number: fullPhoneNumber })
         .select()
         .single()
 
@@ -54,10 +72,16 @@ export default function LoginPage() {
         `/order?customer_id=${newCustomer.customer_id}&customer_name=${encodeURIComponent(newCustomer.name)}`
       )
     } else {
-      // Waiter login — via secure database function, password never leaves the database
+      if (!waiterPassword) {
+        setError('Please enter your password.')
+        return
+      }
+
+      setSubmitting(true)
+
       const { data: waiterId, error: waiterError } = await supabase.rpc('check_waiter_login', {
         p_name: name,
-        p_password: phoneOrPassword,
+        p_password: waiterPassword,
       })
 
       if (waiterError || !waiterId) {
@@ -90,41 +114,3 @@ export default function LoginPage() {
           }`}
         >
           I&apos;m a Waiter
-        </button>
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">Name</label>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
-          placeholder="Your name"
-        />
-      </div>
-
-      <div className="mb-6">
-        <label className="block text-sm font-medium mb-1">
-          {role === 'customer' ? 'Phone number' : 'Password'}
-        </label>
-        <input
-          type={role === 'waiter' ? 'password' : 'text'}
-          value={phoneOrPassword}
-          onChange={(e) => setPhoneOrPassword(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
-          placeholder={role === 'customer' ? 'Your phone number' : 'Waiter password'}
-        />
-      </div>
-
-      {error && <p className="text-red-600 mb-4">{error}</p>}
-
-      <button
-        onClick={handleLogin}
-        disabled={submitting}
-        className="w-full px-6 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
-      >
-        {submitting ? 'Logging in...' : 'Continue'}
-      </button>
-    </div>
-  )
-}
