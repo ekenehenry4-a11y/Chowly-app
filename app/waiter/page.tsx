@@ -172,7 +172,7 @@ export default function WaiterPage() {
 
           <button
             onClick={() => assignAndServe(order)}
-            className="px-5 py-2.5 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
+            className="btn-press px-5 py-2.5 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors"
           >
             Assign & Mark Served
           </button>

@@ -186,7 +186,7 @@ function OrderForm() {
             <button
               onClick={payNow}
               disabled={paying}
-              className="px-5 py-2.5 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors disabled:opacity-50 mr-3"
+              className="btn-press px-5 py-2.5 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors disabled:opacity-50 mr-3"
             >
               {paying ? 'Processing...' : `Pay ₦${confirmation.totalAmount} Now`}
             </button>
@@ -196,7 +196,7 @@ function OrderForm() {
 
         <Link
           href={`/rate?order_id=${confirmation.orderId}&customer_id=${confirmation.customerId}`}
-          className="inline-block px-5 py-2.5 rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors font-medium"
+          className="btn-press inline-block px-5 py-2.5 rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors font-medium"
         >
           Rate your order
         </Link>
@@ -204,9 +204,32 @@ function OrderForm() {
     )
   }
 
-  return (
+return (
     <div className="max-w-xl mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-6">Place Your Order</h1>
+      <div className="flex justify-between items-end mb-6">
+        <h1 className="text-3xl font-bold">Place Your Order</h1>
+        {loggedInCustomerId && (
+          <Link
+            href={`/history?customer_id=${loggedInCustomerId}&customer_name=${encodeURIComponent(loggedInCustomerName || '')}`}
+            className="btn-press group relative flex items-center justify-center w-10 h-10 rounded-full border border-gray-300 hover:bg-gray-100"
+            aria-label="Order History"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              className="w-5 h-5 text-gray-700"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="pointer-events-none absolute -bottom-8 right-0 whitespace-nowrap rounded-md bg-gray-900 text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+              Order History
+            </span>
+          </Link>
+        )}
+      </div>
 
       {/* ADDED: show greeting if logged in, otherwise show name/phone inputs */}
       {loggedInCustomerId ? (
@@ -245,20 +268,20 @@ function OrderForm() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => updateQuantity(item.menu_item_id, -1)}
-                className="w-8 h-8 rounded-full border border-gray-300 hover:bg-gray-100 flex items-center justify-center"
-              >
-                −
-              </button>
-              <span className="w-6 text-center font-medium">{cart[item.menu_item_id] || 0}</span>
-              <button
-                onClick={() => updateQuantity(item.menu_item_id, 1)}
-                className="w-8 h-8 rounded-full border border-gray-300 hover:bg-gray-100 flex items-center justify-center"
-              >
-                +
-              </button>
-            </div>
+  <button
+    onClick={() => updateQuantity(item.menu_item_id, -1)}
+    className="btn-press w-8 h-8 rounded-full border border-gray-300 hover:bg-gray-100 flex items-center justify-center"
+  >
+    −
+  </button>
+  <span className="w-6 text-center font-medium">{cart[item.menu_item_id] || 0}</span>
+  <button
+    onClick={() => updateQuantity(item.menu_item_id, 1)}
+    className="btn-press w-8 h-8 rounded-full border border-gray-300 hover:bg-gray-100 flex items-center justify-center"
+  >
+    +
+  </button>
+</div>
           </li>
         ))}
       </ul>
@@ -268,7 +291,7 @@ function OrderForm() {
       <button
         onClick={submitOrder}
         disabled={submitting}
-        className="w-full px-6 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
+        className="btn-press w-full px-6 py-3 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
       >
         {submitting ? 'Placing order...' : 'Submit Order'}
       </button>
